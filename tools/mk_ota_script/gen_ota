@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# Copyright (C) 2013 The MoKee OpenSource Project
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+MK_BUILDTYPE=`cd $ANDROID_BUILD_TOP;CALLED_FROM_SETUP=true BUILD_SYSTEM=build/core \
+make --no-print-directory -C "$ANDROID_BUILD_TOP" -f build/core/config.mk dumpvar-MK_BUILDTYPE`
+
+if [ -z "`which bsdiff 2> /dev/null`" ];then
+        echo "bsdiff is not installed!"
+        echo "Please install it first!"
+        exit 1
+elif [ -z "$MK_OTA_INPUT" ];then
+	echo "MK_OTA_INPUT not defined!"
+	exit 1
+else
+	INPUT=$MK_OTA_INPUT/$MK_BUILDTYPE/$MK_BUILD
+fi
+
+if [ -z "$OUT_DIR" ];then
+	OUTPUT=out/target/OTA/$MK_BUILDTYPE/$MK_BUILD
+	LOGDIR=out/target/OTA/$MK_BUILDTYPE/logs/$MK_BUILD
+else
+	OUTPUT=$OUT_DIR/target/OTA/$MK_BUILDTYPE/$MK_BUILD
+	LOGDIR=$OUT_DIR/target/OTA/$MK_BUILDTYPE/logs/$MK_BUILD
+fi
+
+if [ -z "$OUT_DIR" ];then
+	cp out/target/product/$MK_BUILD/MK*${MK_BUILDTYPE}.zip $INPUT 2> /dev/null
+else
+	cp $OUT_DIR/target/product/$MK_BUILD/MK*${MK_BUILDTYPE}.zip $INPUT 2> /dev/null
+fi
+
+. $ANDROID_BUILD_TOP/build/tools/mk_ota_script/exclude_check_main.mokee
+
+DEVICE_TREE=`find $ANDROID_BUILD_TOP/device -type d -name "$MK_BUILD"`
+if [ ! -z $DEVICE_TREE ];then
+	if [ -f $DEVICE_TREE/exclude_check_device.mokee ];then
+		. $DEVICE_TREE/exclude_check_device.mokee
+	else
+		unset EXCLUDE_CHECK_DEVICE
+		unset EXCLUDE_CHECK_COMMON
+	fi
+fi
+
+echo ""
+echo "OTA: $MK_BUILD"
+build/tools/mk_ota_script/ota $INPUT $OUTPUT $LOGDIR
+rm -rf $OUTPUT/../tmp
+if [ ! -z "$MK_OTA_EXTRA" ];then
+	mkdir -p $MK_OTA_EXTRA/$MK_BUILDTYPE/$MK_BUILD
+	cp -r $OUTPUT/* $MK_OTA_EXTRA/$MK_BUILDTYPE/$MK_BUILD 2> /dev/null
+fi
