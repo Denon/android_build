@@ -18,9 +18,10 @@ ifneq (true,$(LOCAL_IS_STATIC_JAVA_LIBRARY))
 ifneq (,$(LOCAL_RESOURCE_DIR))
 $(error $(LOCAL_PATH): Target java libraries may not set LOCAL_RESOURCE_DIR)
 endif
-# base_rules.mk looks at this
-all_res_assets :=
 endif
+
+#xxx base_rules.mk looks at this
+all_res_assets :=
 
 LOCAL_BUILT_MODULE_STEM := javalib.jar
 
@@ -30,18 +31,12 @@ intermediates.COMMON := $(call local-intermediates-dir,COMMON)
 common_javalib.jar := $(intermediates.COMMON)/$(LOCAL_BUILT_MODULE_STEM)
 LOCAL_INTERMEDIATE_TARGETS += $(common_javalib.jar)
 
-ifeq ($(LOCAL_PROGUARD_ENABLED),disabled)
-  LOCAL_PROGUARD_ENABLED :=
-endif
-
 ifneq (true,$(WITH_DEXPREOPT))
 LOCAL_DEX_PREOPT :=
 else
 ifeq (,$(TARGET_BUILD_APPS))
-ifeq (,$(LOCAL_APK_LIBRARIES))
 ifndef LOCAL_DEX_PREOPT
-LOCAL_DEX_PREOPT := $(DEX_PREOPT_DEFAULT)
-endif
+LOCAL_DEX_PREOPT := true
 endif
 endif
 endif
@@ -65,12 +60,7 @@ include $(BUILD_SYSTEM)/java.mk
 
 ifeq ($(LOCAL_IS_STATIC_JAVA_LIBRARY),true)
 # No dex; all we want are the .class files with resources.
-$(common_javalib.jar) : $(java_resource_sources)
-ifdef LOCAL_PROGUARD_ENABLED
-$(common_javalib.jar) : $(full_classes_proguard_jar)
-else
-$(common_javalib.jar) : $(full_classes_jar)
-endif
+$(common_javalib.jar) : $(full_classes_jar) $(java_resource_sources)
 	@echo -e ${CL_GRN}"target Static Jar:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
 	$(copy-file-to-target)
 ifneq ($(extra_jar_args),)
@@ -83,7 +73,7 @@ $(LOCAL_BUILT_MODULE): $(common_javalib.jar)
 else # !LOCAL_IS_STATIC_JAVA_LIBRARY
 
 $(common_javalib.jar): PRIVATE_DEX_FILE := $(built_dex)
-$(common_javalib.jar) : $(built_dex) $(java_resource_sources)
+$(common_javalib.jar) : $(built_dex) $(java_resource_sources) | $(AAPT)
 	@echo -e ${CL_GRN}"target Jar:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
 	$(create-empty-package)
 	$(add-dex-to-package)
@@ -116,7 +106,7 @@ $(built_odex) : $(common_javalib.jar) | $(DEXPREOPT) $(DEXOPT)
 	@mkdir -p $(dir $@)
 	$(call dexpreopt-one-file,$<,$@)
 
-$(LOCAL_BUILT_MODULE) : $(common_javalib.jar) | $(ACP)
+$(LOCAL_BUILT_MODULE) : $(common_javalib.jar) | $(ACP) $(AAPT)
 	$(call copy-file-to-target)
 ifneq (nostripping,$(LOCAL_DEX_PREOPT))
 	$(call dexpreopt-remove-classes.dex,$@)

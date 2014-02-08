@@ -26,9 +26,11 @@ PRODUCT_PACKAGES := \
     Calculator \
     Calendar \
     CertInstaller \
-    Email \
+    DrmProvider \
+    Email2 \
     Exchange2 \
     Gallery2 \
+    LatinIME \
     Launcher2 \
     Music \
     Provision \

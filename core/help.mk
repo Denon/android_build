@@ -14,6 +14,13 @@
 # limitations under the License.
 #
 
+ifeq ($(MAKECMDGOALS),help)
+dont_bother := true
+endif
+ifeq ($(MAKECMDGOALS),out)
+dont_bother := true
+endif
+
 .PHONY: help
 help:
 	@echo
@@ -32,3 +39,4 @@ help:
 .PHONY: out
 out:
 	@echo "I'm sure you're nice and all, but no thanks."
+

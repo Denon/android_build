@@ -24,33 +24,28 @@ PRODUCT_PACKAGES := \
     Bluetooth \
     Calculator \
     Calendar \
-    Camera2 \
     CertInstaller \
-    Email \
+    DrmProvider \
+    Email2 \
     Exchange2 \
     FusedLocation \
     Gallery2 \
     InputDevices \
-    Keyguard \
+    LatinIME \
     Launcher2 \
     Music \
-    OneTimeInitializer \
-    PrintSpooler \
     Provision \
+    Phone \
     QuickSearchBox \
     Settings \
     SystemUI \
-    TeleService \
     CalendarProvider \
     bluetooth-health \
     hostapd \
-    wpa_supplicant.conf \
-    WallpaperCropper
+    wpa_supplicant.conf
 
 PRODUCT_PACKAGES += \
     audio \
-    clatd \
-    clatd.conf \
     dhcpcd.conf \
     network \
     pand \
@@ -59,12 +54,10 @@ PRODUCT_PACKAGES += \
     wpa_supplicant
 
 PRODUCT_PACKAGES += \
-    librs_jni \
-    libvideoeditor_jni \
-    libvideoeditor_core \
-    libvideoeditor_osal \
-    libvideoeditor_videofilters \
-    libvideoeditorplayer \
+    icu.dat
+
+PRODUCT_PACKAGES += \
+    librs_jni
 
 PRODUCT_PACKAGES += \
     audio.primary.default \
@@ -82,11 +75,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.carrier=unknown
 
 $(call inherit-product-if-exists, frameworks/base/data/fonts/fonts.mk)
-$(call inherit-product-if-exists, external/noto-fonts/fonts.mk)
+$(call inherit-product-if-exists, external/cibu-fonts/fonts.mk)
+$(call inherit-product-if-exists, external/lohit-fonts/fonts.mk)
 $(call inherit-product-if-exists, external/naver-fonts/fonts.mk)
-$(call inherit-product-if-exists, external/sil-fonts/fonts.mk)
 $(call inherit-product-if-exists, frameworks/base/data/keyboards/keyboards.mk)
-$(call inherit-product-if-exists, frameworks/webview/chromium/chromium.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core.mk)
 
 # Overrides

@@ -13,9 +13,6 @@
 # limitations under the License.
 #
 
-# Don't bother with the cleanspecs if you are running mm/mmm
-ifeq ($(ONE_SHOT_MAKEFILE)$(dont_bother),)
-
 INTERNAL_CLEAN_STEPS :=
 
 # Builds up a list of clean steps.  Creates a unique
@@ -81,6 +78,10 @@ else
     $(info Clean step: $(INTERNAL_CLEAN_STEP.$(step))) \
     $(shell $(INTERNAL_CLEAN_STEP.$(step))) \
    )
+  # If we are running mm/mmm, we should copy over the other clean steps too.
+  ifneq ($(ONE_SHOT_MAKEFILE),)
+    INTERNAL_CLEAN_STEPS := $(strip $(CURRENT_CLEAN_STEPS) $(steps))
+  endif
   steps :=
 endif
 CURRENT_CLEAN_BUILD_VERSION :=
@@ -100,7 +101,6 @@ clean_steps_file :=
 INTERNAL_CLEAN_STEPS :=
 INTERNAL_CLEAN_BUILD_VERSION :=
 
-endif  # if not ONE_SHOT_MAKEFILE dont_bother
 
 # Since products and build variants (unfortunately) share the same
 # PRODUCT_OUT staging directory, things can get out of sync if different
@@ -183,7 +183,6 @@ installclean_files := \
 	$(PRODUCT_OUT)/*.xlb \
 	$(PRODUCT_OUT)/*.zip \
 	$(PRODUCT_OUT)/*.zip.md5sum \
-	$(PRODUCT_OUT)/kernel \
 	$(PRODUCT_OUT)/data \
 	$(PRODUCT_OUT)/obj/APPS \
 	$(PRODUCT_OUT)/obj/NOTICE_FILES \
@@ -193,11 +192,7 @@ installclean_files := \
 	$(PRODUCT_OUT)/system \
 	$(PRODUCT_OUT)/dex_bootjars \
 	$(PRODUCT_OUT)/obj/JAVA_LIBRARIES \
-	$(PRODUCT_OUT)/obj/FAKE \
-	$(PRODUCT_OUT)/obj/EXECUTABLES/adbd_intermediates \
-	$(PRODUCT_OUT)/obj/EXECUTABLES/init_intermediates \
-	$(PRODUCT_OUT)/obj/ETC/mac_permissions.xml_intermediates \
-	$(PRODUCT_OUT)/obj/ETC/sepolicy_intermediates
+	$(PRODUCT_OUT)/obj/FAKE
 
 # The files/dirs to delete during a dataclean, which removes any files
 # in the staging and emulator data partitions.

@@ -15,10 +15,8 @@ LOCAL_SRC_FILES := \
 LOCAL_C_INCLUDES += external/zlib
 
 LOCAL_STATIC_LIBRARIES := \
-	libandroidfw \
 	libutils \
-	libcutils \
-	liblog
+	libcutils
 
 ifeq ($(HOST_OS),linux)
 LOCAL_LDLIBS += -lrt
@@ -37,3 +35,4 @@ endif # BUILD_HOST_static
 LOCAL_MODULE := zipalign
 
 include $(BUILD_HOST_EXECUTABLE)
+

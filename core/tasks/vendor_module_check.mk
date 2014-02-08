@@ -40,18 +40,6 @@ ifneq (,$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_RESTRICT_VENDOR_FILES))
 _vendor_check_modules := $(sort $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES))
 $(call expand-required-modules,_vendor_check_modules,$(_vendor_check_modules))
 
-# Expand the target modules installed via LOCAL_SHARED_LIBRARIES
-# $(1): the list of modules to expand.
-define expand-required-shared-libraries
-$(eval _ersl_new_modules := $(filter $(addsuffix :%,$(1)),$(TARGET_DEPENDENCIES_ON_SHARED_LIBRARIES)))\
-$(eval _ersl_new_modules := $(foreach p,$(_ersl_new_modules),$(word 3,$(subst :,$(space),$(p)))))\
-$(eval _ersl_new_modules := $(sort $(subst $(comma),$(space),$(_ersl_new_modules))))\
-$(eval _ersl_new_modules := $(filter-out $(_vendor_check_modules),$(_ersl_new_modules)))\
-$(if $(_ersl_new_modules),$(eval _vendor_check_modules += $(_ersl_new_modules))\
-  $(call expand-required-shared-libraries,$(_ersl_new_modules)))
-endef
-$(call expand-required-shared-libraries,$(_vendor_check_modules))
-
 _vendor_module_owner_info :=
 # Restrict owners
 ifneq (,$(filter true owner all, $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_RESTRICT_VENDOR_FILES)))
@@ -85,12 +73,10 @@ ifneq (,$(filter path all, $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_RESTRICT_VENDO
 
 $(foreach m, $(_vendor_check_modules), \
   $(if $(filter vendor/%, $(ALL_MODULES.$(m).PATH)),\
-    $(if $(filter-out FAKE, $(ALL_MODULES.$(m).CLASS)),\
-      $(if $(filter-out ,$(ALL_MODULES.$(m).INSTALLED)),\
-        $(if $(filter $(TARGET_OUT_VENDOR)/% $(HOST_OUT)/%, $(ALL_MODULES.$(m).INSTALLED)),,\
-          $(error Error: vendor module "$(m)" in $(ALL_MODULES.$(m).PATH) \
-            in product "$(TARGET_PRODUCT)" being installed to \
-            $(ALL_MODULES.$(m).INSTALLED) which is not in the vendor tree))))))
+    $(if $(filter $(TARGET_OUT_VENDOR)/%, $(ALL_MODULES.$(m).INSTALLED)),,\
+      $(error Error: vendor module "$(m)" in $(ALL_MODULES.$(m).PATH) \
+        in product "$(TARGET_PRODUCT)" being installed to \
+        $(ALL_MODULES.$(m).INSTALLED) which is not in the vendor tree))))
 
 endif
 

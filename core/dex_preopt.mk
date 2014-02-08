@@ -3,9 +3,9 @@
 #
 ####################################
 
-DEXPREOPT_BOOT_JARS := $(PRODUCT_BOOT_JARS)
+# TODO: replace it with device's BOOTCLASSPATH
+DEXPREOPT_BOOT_JARS := core:core-junit:bouncycastle:ext:framework:telephony-common:mms-common:android.policy:services:apache-xml
 DEXPREOPT_BOOT_JARS_MODULES := $(subst :, ,$(DEXPREOPT_BOOT_JARS))
-PRODUCT_BOOTCLASSPATH := $(subst $(space),:,$(foreach m,$(DEXPREOPT_BOOT_JARS_MODULES),/system/framework/$(m).jar))
 
 DEXPREOPT_BUILD_DIR := $(OUT_DIR)
 DEXPREOPT_PRODUCT_DIR := $(patsubst $(DEXPREOPT_BUILD_DIR)/%,%,$(PRODUCT_OUT))/dex_bootjars
@@ -56,9 +56,7 @@ $(_dbj_odex) : $(_dbj_src_jar) | $(ACP) $(DEXPREOPT) $(DEXOPT)
 
 $(_dbj_jar_no_dex) : $(_dbj_src_jar) | $(ACP) $(AAPT)
 	$$(call copy-file-to-target)
-ifneq ($(DEX_PREOPT_DEFAULT),nostripping)
 	$$(call dexpreopt-remove-classes.dex,$$@)
-endif
 
 $(eval _dbj_jar :=)
 $(eval _dbj_odex :=)

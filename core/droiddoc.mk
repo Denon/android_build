@@ -22,9 +22,9 @@
 
 LOCAL_IS_HOST_MODULE := $(call true-or-empty,$(LOCAL_IS_HOST_MODULE))
 ifeq ($(LOCAL_IS_HOST_MODULE),true)
-my_prefix := HOST_
+my_prefix:=HOST_
 else
-my_prefix := TARGET_
+my_prefix:=TARGET_
 endif
 
 LOCAL_MODULE_CLASS := $(strip $(LOCAL_MODULE_CLASS))
@@ -51,6 +51,8 @@ ifeq ($(LOCAL_DROIDDOC_CUSTOM_ASSET_DIR),)
 LOCAL_DROIDDOC_CUSTOM_ASSET_DIR := assets
 endif
 
+$(full_target): PRIVATE_CLASSPATH:=$(LOCAL_CLASSPATH)
+full_java_lib_deps :=
 
 $(full_target): PRIVATE_BOOTCLASSPATH :=
 ifeq ($(BUILD_OS),linux)
@@ -69,17 +71,23 @@ ifneq ($(LOCAL_SDK_VERSION),)
     LOCAL_JAVA_LIBRARIES := sdk_v$(LOCAL_SDK_VERSION) $(LOCAL_JAVA_LIBRARIES)
   endif
 else
-  LOCAL_JAVA_LIBRARIES := core ext framework framework2 $(LOCAL_JAVA_LIBRARIES)
+  LOCAL_JAVA_LIBRARIES := core ext framework $(LOCAL_JAVA_LIBRARIES)
 endif  # LOCAL_SDK_VERSION
 LOCAL_JAVA_LIBRARIES := $(sort $(LOCAL_JAVA_LIBRARIES))
 
-endif # !LOCAL_IS_HOST_MODULE
+full_java_libs := $(call java-lib-files,$(LOCAL_JAVA_LIBRARIES),$(LOCAL_IS_HOST_MODULE))
+full_java_lib_deps := $(call java-lib-deps,$(LOCAL_JAVA_LIBRARIES),$(LOCAL_IS_HOST_MODULE))
 
-full_java_libs := $(call java-lib-files,$(LOCAL_JAVA_LIBRARIES),$(LOCAL_IS_HOST_MODULE)) $(LOCAL_CLASSPATH)
-full_java_lib_deps := $(call java-lib-deps,$(LOCAL_JAVA_LIBRARIES),$(LOCAL_IS_HOST_MODULE)) $(LOCAL_CLASSPATH)
+# we're not going to generate docs from any of these classes, but we need them
+# to build properly.
+ifneq ($(strip $(LOCAL_STATIC_JAVA_LIBRARIES)),)
+full_java_libs += $(addprefix $(LOCAL_PATH)/,$(LOCAL_STATIC_JAVA_LIBRARIES)) $(LOCAL_CLASSPATH)
+full_java_lib_deps += $(addprefix $(LOCAL_PATH)/,$(LOCAL_STATIC_JAVA_LIBRARIES)) $(LOCAL_CLASSPATH)
+endif
 
 $(full_target): PRIVATE_CLASSPATH := $(subst $(space),:,$(full_java_libs))
 
+endif # !LOCAL_IS_HOST_MODULE
 
 intermediates.COMMON := $(call local-intermediates-dir,COMMON)
 
@@ -144,11 +152,6 @@ $(full_target): PRIVATE_ADDITIONAL_HTML_DIR := -htmldir2 $(LOCAL_PATH)/$(LOCAL_A
 else
 $(full_target): PRIVATE_ADDITIONAL_HTML_DIR :=
 endif
-ifneq ($(strip $(LOCAL_ADDITIONAL_HTML_DIR)),)
-$(full_target): PRIVATE_ADDITIONAL_HTML_DIR := -htmldir2 $(LOCAL_PATH)/$(LOCAL_ADDITIONAL_HTML_DIR)
-else
-$(full_target): PRIVATE_ADDITIONAL_HTML_DIR :=
-endif
 
 # TODO: not clear if this is used any more
 $(full_target): PRIVATE_LOCAL_PATH := $(LOCAL_PATH)
@@ -157,7 +160,7 @@ html_dir_files := $(shell find $(LOCAL_PATH)/$(LOCAL_DROIDDOC_HTML_DIR) -type f)
 
 $(full_target): $(full_src_files) $(droiddoc_templates) $(droiddoc) $(html_dir_files) $(full_java_lib_deps) $(LOCAL_ADDITIONAL_DEPENDENCIES)
 	@echo -e ${CL_YLW}"Docs droiddoc:"${CL_RST}" $(PRIVATE_OUT_DIR)"
-	$(hide) mkdir -p $(dir $@)
+	$(hide) mkdir -p $(dir $(full_target))
 	$(call prepare-doc-source-list,$(PRIVATE_SRC_LIST_FILE),$(PRIVATE_JAVA_FILES), \
 			$(PRIVATE_SOURCE_INTERMEDIATES_DIR) $(PRIVATE_ADDITIONAL_JAVA_DIR))
 	$(hide) ( \
@@ -193,7 +196,7 @@ else
 ##
 $(full_target): $(full_src_files) $(full_java_lib_deps)
 	@echo -e ${CL_YLW}"Docs javadoc:"${CL_RST}" $(PRIVATE_OUT_DIR)"
-	@mkdir -p $(dir $@)
+	@mkdir -p $(dir $(full_target))
 	$(call prepare-doc-source-list,$(PRIVATE_SRC_LIST_FILE),$(PRIVATE_JAVA_FILES), \
 			$(PRIVATE_SOURCE_INTERMEDIATES_DIR) $(PRIVATE_ADDITIONAL_JAVA_DIR))
 	$(hide) ( \

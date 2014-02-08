@@ -23,8 +23,6 @@ comma := ,
 # only has an effect on python 2.6 and above.
 export PYTHONDONTWRITEBYTECODE := 1
 
--include $(TOPDIR)vendor/extra/extra_config.mk
-
 # Standard source directories.
 SRC_DOCS:= $(TOPDIR)docs
 # TODO: Enforce some kind of layering; only add include paths
@@ -40,12 +38,13 @@ SRC_HEADERS := \
 	$(TOPDIR)frameworks/native/opengl/include \
 	$(TOPDIR)frameworks/av/include \
 	$(TOPDIR)frameworks/base/include \
+	$(TOPDIR)frameworks/base/opengl/include \
 	$(TOPDIR)external/skia/include
 SRC_HOST_HEADERS:=$(TOPDIR)tools/include
 SRC_LIBRARIES:= $(TOPDIR)libs
 SRC_SERVERS:= $(TOPDIR)servers
 SRC_TARGET_DIR := $(TOPDIR)build/target
-SRC_API_DIR := $(TOPDIR)prebuilts/sdk/api
+SRC_API_DIR := $(TOPDIR)frameworks/base/api
 
 # Some specific paths to tools
 SRC_DROIDDOC_DIR := $(TOPDIR)build/tools/droiddoc
@@ -80,7 +79,6 @@ BUILD_DROIDDOC:= $(BUILD_SYSTEM)/droiddoc.mk
 BUILD_COPY_HEADERS := $(BUILD_SYSTEM)/copy_headers.mk
 BUILD_NATIVE_TEST := $(BUILD_SYSTEM)/native_test.mk
 BUILD_HOST_NATIVE_TEST := $(BUILD_SYSTEM)/host_native_test.mk
-BUILD_NOTICE_FILE := $(BUILD_SYSTEM)/notice_files.mk
 
 -include cts/build/config.mk
 
@@ -125,7 +123,7 @@ TARGET_SHELL := mksh
 
 # ---------------------------------------------------------------
 # Try to include buildspec.mk, which will try to set stuff up.
-# If this file doesn't exist, the environment variables will
+# If this file doesn't exist, the environemnt variables will
 # be used, and if that doesn't work, then the default is an
 # arm build
 ifndef ANDROID_BUILDSPEC
@@ -148,8 +146,8 @@ include $(BUILD_SYSTEM)/linaro_compilerchecks.mk
 board_config_mk := \
 	$(strip $(wildcard \
 		$(SRC_TARGET_DIR)/board/$(TARGET_DEVICE)/BoardConfig.mk \
-		$(shell test -d device && find device -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
-		$(shell test -d vendor && find vendor -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
+		device/*/$(TARGET_DEVICE)/BoardConfig.mk \
+		vendor/*/$(TARGET_DEVICE)/BoardConfig.mk \
 	))
 ifeq ($(board_config_mk),)
   $(error No config file found for TARGET_DEVICE $(TARGET_DEVICE))
@@ -163,26 +161,6 @@ ifeq ($(TARGET_ARCH),)
 endif
 TARGET_DEVICE_DIR := $(patsubst %/,%,$(dir $(board_config_mk)))
 board_config_mk :=
-
-# Perhaps we should move this block to build/core/Makefile,
-# once we don't have TARGET_NO_KERNEL reference in AndroidBoard.mk/Android.mk.
-ifneq ($(strip $(TARGET_NO_BOOTLOADER)),true)
-  INSTALLED_BOOTLOADER_MODULE := $(PRODUCT_OUT)/bootloader
-  ifeq ($(strip $(TARGET_BOOTLOADER_IS_2ND)),true)
-    INSTALLED_2NDBOOTLOADER_TARGET := $(PRODUCT_OUT)/2ndbootloader
-  else
-    INSTALLED_2NDBOOTLOADER_TARGET :=
-  endif
-else
-  INSTALLED_BOOTLOADER_MODULE :=
-  INSTALLED_2NDBOOTLOADER_TARGET :=
-endif # TARGET_NO_BOOTLOADER
-ifneq ($(strip $(TARGET_NO_KERNEL)),true)
-  INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
-else
-  INSTALLED_KERNEL_TARGET :=
-endif
-
 
 # The build system exposes several variables for where to find the kernel
 # headers:
@@ -300,19 +278,13 @@ endif
 # ---------------------------------------------------------------
 # Generic tools.
 
-LEX := flex
-# The default PKGDATADIR built in the prebuilt bison is a relative path
-# external/bison/data.
-# To run bison from elsewhere you need to set up enviromental variable
-# BISON_PKGDATADIR.
-BISON_PKGDATADIR := $(PWD)/external/bison/data
-BISON := prebuilts/misc/$(BUILD_OS)-$(BUILD_ARCH)/bison/bison
-YACC := $(BISON) -d
-
+LEX:= flex
+YACC:= bison -d
 DOXYGEN:= doxygen
 AAPT := $(HOST_OUT_EXECUTABLES)/aapt$(HOST_EXECUTABLE_SUFFIX)
 AIDL := $(HOST_OUT_EXECUTABLES)/aidl$(HOST_EXECUTABLE_SUFFIX)
 PROTOC := $(HOST_OUT_EXECUTABLES)/aprotoc$(HOST_EXECUTABLE_SUFFIX)
+ICUDATA := $(HOST_OUT_EXECUTABLES)/icudata$(HOST_EXECUTABLE_SUFFIX)
 SIGNAPK_JAR := $(HOST_OUT_JAVA_LIBRARIES)/signapk$(COMMON_JAVA_PACKAGE_SUFFIX)
 MKBOOTFS := $(HOST_OUT_EXECUTABLES)/mkbootfs$(HOST_EXECUTABLE_SUFFIX)
 MINIGZIP := $(HOST_OUT_EXECUTABLES)/minigzip$(HOST_EXECUTABLE_SUFFIX)
@@ -334,7 +306,7 @@ JARJAR := $(HOST_OUT_JAVA_LIBRARIES)/jarjar.jar
 PROGUARD := external/proguard/bin/proguard.sh
 JAVATAGS := build/tools/java-event-log-tags.py
 LLVM_RS_CC := $(HOST_OUT_EXECUTABLES)/llvm-rs-cc$(HOST_EXECUTABLE_SUFFIX)
-BCC_COMPAT := $(HOST_OUT_EXECUTABLES)/bcc_compat$(HOST_EXECUTABLE_SUFFIX)
+LLVM_RS_LINK := $(HOST_OUT_EXECUTABLES)/llvm-rs-link$(HOST_EXECUTABLE_SUFFIX)
 DEXOPT := $(HOST_OUT_EXECUTABLES)/dexopt$(HOST_EXECUTABLE_SUFFIX)
 DEXPREOPT := dalvik/tools/dex-preopt
 LINT := prebuilts/sdk/tools/lint
@@ -348,7 +320,12 @@ ZIPALIGN := $(HOST_OUT_EXECUTABLES)/zipalign$(HOST_EXECUTABLE_SUFFIX)
 FINDBUGS := prebuilt/common/findbugs/bin/findbugs
 EMMA_JAR := external/emma/lib/emma$(COMMON_JAVA_PACKAGE_SUFFIX)
 
+# Deal with archaic version of bison on Mac OS X.
+ifeq ($(filter 1.28,$(shell $(YACC) -V)),)
 YACC_HEADER_SUFFIX:= .hpp
+else
+YACC_HEADER_SUFFIX:= .cpp.h
+endif
 
 # Don't use column under Windows, cygwin or not
 ifeq ($(HOST_OS),windows)
@@ -446,11 +423,6 @@ HOST_GLOBAL_CPPFLAGS += $(HOST_RELEASE_CPPFLAGS)
 TARGET_GLOBAL_CFLAGS += $(TARGET_RELEASE_CFLAGS)
 TARGET_GLOBAL_CPPFLAGS += $(TARGET_RELEASE_CPPFLAGS)
 
-# allow overriding default Java libraries on a per-target basis
-ifeq ($(TARGET_DEFAULT_JAVA_LIBRARIES),)
-  TARGET_DEFAULT_JAVA_LIBRARIES := core core-junit ext framework framework2
-endif
-
 # define llvm tools and global flags
 include $(BUILD_SYSTEM)/llvm_config.mk
 
@@ -487,20 +459,5 @@ INTERNAL_PLATFORM_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/publi
 # This is the standard way to name a directory containing prebuilt target
 # objects. E.g., prebuilt/$(TARGET_PREBUILT_TAG)/libc.so
 TARGET_PREBUILT_TAG := android-$(TARGET_ARCH)
-
-# Set up RS prebuilt variables for compatibility library
-
-RS_PREBUILT_CLCORE := prebuilts/sdk/renderscript/lib/$(TARGET_ARCH)/libclcore.bc
-RS_PREBUILT_LIBPATH := -L prebuilts/ndk/8/platforms/android-9/arch-$(TARGET_ARCH)/usr/lib
-RS_PREBUILT_COMPILER_RT := prebuilts/sdk/renderscript/lib/$(TARGET_ARCH)/libcompiler_rt.a
-
-# Rules for QCOM targets
-include $(BUILD_SYSTEM)/qcom_target.mk
-
-ifneq ($(MK_BUILD),)
-## We need to be sure the global selinux policies are included
-## last, to avoid accidental resetting by device configs
-$(eval include vendor/mk/sepolicy/sepolicy.mk)
-endif
 
 include $(BUILD_SYSTEM)/dumpvar.mk
