@@ -83,7 +83,6 @@ PRODUCT_PACKAGES += \
     libfilterfw \
     libfilterpack_imageproc \
     libgabi++ \
-    libanalogradiobroadcasting \
     libicui18n \
     libicuuc \
     libjavacore \
@@ -155,7 +154,6 @@ endif
 
 ifeq ($(HAVE_SELINUX),true)
     PRODUCT_PACKAGES += \
-        auditd \
         sepolicy \
         file_contexts \
         seapp_contexts \
