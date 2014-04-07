@@ -181,7 +181,7 @@ include $(BUILD_SYSTEM)/product.mk
 include $(BUILD_SYSTEM)/device.mk
 
 ifneq ($(EV_BUILD),)
-current_product_makefile := device/*/$(EV_BUILD)/ev.mk
+current_product_makefile := device/*/$(EV_BUILD)/aosp.mk
 all_product_makefiles :=
 else
 ifneq ($(strip $(TARGET_BUILD_APPS)),)

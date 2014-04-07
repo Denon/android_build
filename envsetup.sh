@@ -56,8 +56,8 @@ function check_product()
         return
     fi
 
-    if (echo -n $1 | grep -q -e "^ev_") ; then
-        EV_BUILD=$(echo -n $1 | sed -e 's/^ev_//g')
+    if (echo -n $1 | grep -q -e "^aosp_") ; then
+        EV_BUILD=$(echo -n $1 | sed -e 's/^aosp_//g')
     else
         EV_BUILD=
     fi
@@ -479,7 +479,7 @@ function lunch()
     then
         selection=$answer
     else #It is likely just the board name, assemble the combo for us
-        selection=ev_${answer}-eng
+        selection=aosp_${answer}-eng
     fi
 
     if [ -z "$selection" ]
@@ -1235,7 +1235,7 @@ if [ "x$SHELL" != "x/bin/bash" ]; then
 fi
 
 # Execute the contents of any vendorsetup.sh files we can find.
-for f in `/bin/ls vendor/*/vendorsetup.sh vendor/*/*/vendorsetup.sh 2> /dev/null`
+for f in `/bin/ls vendor/*/vendorsetup.sh vendor/*/*/vendorsetup.sh device/*/*/vendorsetup.sh 2> /dev/null`
 do
     echo "including $f"
     . $f
