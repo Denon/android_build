@@ -495,7 +495,7 @@ function lunch()
     check_product $product
     if [ $? -ne 0 ]
     then
-        # if we can't find a product, try to grab it off the Evervolv github
+        # if we can't find a product, try to grab it off the Solitarily github
         T=$(gettop)
         pushd $T > /dev/null
         build/tools/roomservice.py $product

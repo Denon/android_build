@@ -25,7 +25,7 @@ except:
     device = product
 
 if not depsonly:
-    print "Device %s not found. Attempting to retrieve device repository from Evervolv Github (http://github.com/Evervolv)." % device
+    print "Device %s not found. Attempting to retrieve device repository from Solitarily Github (http://github.com/Solitarily)." % device
 
 try: # Convert from depreciated format
     if not os.path.isdir(local_manifests_dir):
