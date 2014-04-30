@@ -31,8 +31,8 @@ Invoke ". build/envsetup.sh" from your shell to add the following functions to y
 - installboot: Installs a boot.img to the connected device.
 - installrecovery: Installs a recovery.img to the connected device.
 - clog:     Tool to generate changelog.
-- ota:      Generate OTA packages using the MoKee OTA system.
-- ota_all:  Batch generate OTA packages using the MoKee OTA system.
+- ota_all:  Generate OTA packages using the MoKee OTA system.
+- translate: Tool to to aid in translating strings
 
 Look at the source to view more functions. The complete list is:
 EOF
@@ -614,6 +614,9 @@ function lunch()
 
     if [ "$CCACHE_DIR" ]
     then
+        if [ ! -d "$CCACHE_DIR" ]; then
+          mkdir "$CCACHE_DIR"
+        fi
         TMP_CCACHE_DIR=$(echo ${CCACHE_DIR%%/mk_*})
         export CCACHE_DIR=$TMP_CCACHE_DIR/$product
         if [ -z "$CCACHE_SIZE" ]; then
@@ -624,6 +627,11 @@ function lunch()
         else
             prebuilts/misc/linux-x86/ccache/ccache -M $CCACHE_SIZE
         fi
+    fi
+
+    if [ "$(which pngquant)" == "" ]
+    then
+        echo -e "\033[1;33;41mpngquant is not installed! Builds will be larger!\033[0m"
     fi
 
     export TARGET_PRODUCT=$product
@@ -764,7 +772,7 @@ function gettop
             T=
             while [ \( ! \( -f $TOPFILE \) \) -a \( $PWD != "/" \) ]; do
                 \cd ..
-                T=`PWD= /bin/pwd`
+                T=`PWD= /bin/pwd -P`
             done
             \cd $HERE
             if [ -f "$T/$TOPFILE" ]; then
@@ -2160,13 +2168,13 @@ function clog() {
 }
 
 # OTA Script
-function ota() {
-    ./build/tools/mk_ota_script/gen_ota
+function ota_all() {
+    ./build/tools/mk_ota_script/gen_ota $1 $2
 }
 
-# Batch OTA Script
-function ota_all() {
-    ./build/tools/mk_ota_script/gen_ota_all $1 $2
+# Translation Tool
+function translate() {
+    $ANDROID_BUILD_TOP/build/tools/translate.py $1 $2
 }
 
 # Add completions
