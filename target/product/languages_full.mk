@@ -21,4 +21,4 @@
 
 # These are all the locales that have translations and are displayable
 # by TextView in this branch.
-PRODUCT_LOCALES := zh_TW zh_CN zh_HK en_US  ko_KR
+PRODUCT_LOCALES := en_US zh_CN zh_TW zh_HK  ko_KR
