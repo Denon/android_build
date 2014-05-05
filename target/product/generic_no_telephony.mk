@@ -59,7 +59,7 @@ PRODUCT_PACKAGES += \
     wpa_supplicant
 
 PRODUCT_PACKAGES += \
-    librs_jni \
+    librs_jni
 
 PRODUCT_PACKAGES += \
     audio.primary.default \
